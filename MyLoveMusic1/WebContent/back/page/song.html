@@ -1,0 +1,468 @@
+<table id="song_data" data-options="fit:true">
+</table>
+
+<div id="song_search">
+	<a id="btn" href="javascript:song_showAddsong()" class="easyui-linkbutton" data-options="iconCls:'icon-script-add',plain:true" style="float:left">添加</a>  
+	<div class="datagrid-btn-separator"></div>
+	<a id="btn" href="javascript:song_showUpdatesong()" class="easyui-linkbutton" data-options="iconCls:'icon-server-edit',plain:true" style="float:left">修改</a>  
+	<div class="datagrid-btn-separator"></div>
+	<!-- <label>歌手类型：</label>
+	<select name="singerType" id="song_search_singerType" onchange="changeSinger(this.value,'song_search_singerId')">
+		<option value="">--全部--</option>
+	</select> -->
+	<label>歌手：</label>
+	<select name="singerId" id="song_search_singerId">
+		<option value="">--全部--</option>
+	</select>
+	<label>语种：</label>
+	<select name="languages" id="song_search_languages">
+		<option value="">--全部--</option>
+	</select>
+	<label>风格：</label>
+	<select name="style" id="song_search_style">
+		<option value="">--全部--</option>
+	</select>
+	<label>歌曲姓名：</label>
+	<input type="text" name="sname" id="song_search_sname"/>
+	<a href="javascript:song_searchsong()" class="easyui-linkbutton" data-options="iconCls:'icon-search'">查询</a>
+</div>
+
+<div id="song_update" class="easyui-dialog" title="添加歌曲信息" style="width:500px;height:300px;align:center"
+		data-options="iconCls:'icon-user-add',resizable:true,modal:true,closed:true" >
+	<form id="song_update_song">
+		<ul>
+		
+			<li>
+				<label>歌曲姓名：</label>
+				<input type="text" name="sname" id="song_update_sname" class="song_input"/>
+			</li>
+			<li>
+				<label>歌曲时长：</label>
+				<input type="text" name="longs" id="song_update_longs" class="song_input"/>
+			</li>
+			<li>
+				<label>歌手类型：</label>
+				<select name="singerType" id="song_update_singerType" onchange="changeSinger(this.value,'song_update_singerId')">
+				<option value="">--全部--</option>
+				</select>
+			</li>
+			<li>
+				<label>歌手：</label>
+				<select name="singerId" id="song_update_singerId"></select>
+			</li>
+			
+			<li>
+				<label>语种：</label>
+				<select name="languages" id="song_update_languages"></select>
+			</li>
+			<li>
+				<label>风格：</label>
+				<select name="style" id="song_update_style"></select>
+			</li>
+			<li>
+				<label>歌曲图片：</label>
+				<input type="file" name="photo" id="song_update_photo" onchange="setImagePreviews(this,'song_update_showpic')"/>
+			</li>
+			<li>
+				<label>歌词：</label>
+				<input type="file" name="lyric" id="lyric"/>
+			</li>
+			<li>
+				<label>歌曲地址：</label>
+				<input type="file" name="saddr" id="song_update_saddr"/>
+			</li>
+			<li>
+				<div id="song_update_showpic"></div>
+				<div id="song_update_showsongaddr"></div>
+			</li>
+		</ul>
+	</form>
+</div>
+
+<style>
+#song_search label{
+	margin-left:20px;
+}
+
+#song_update li{
+	list-style-type:none;
+	margin-top:20px;
+}
+
+#song_update .song_input{
+	width:160px;
+	border:1px solid #95B8E7;
+	line-height:20px;
+}
+
+.song_delpic_show{
+	width:100px;
+	height:100px;
+	overflow:hidden;
+	position:relative;
+	float:left;
+	border:1px solid #fff;
+}
+
+.song_delpic_show>span{
+	margin:0px;
+	padding:0px;
+	background:url(../../images/cancel.png) no-repeat; center center;
+	width:16px;
+	height:16px;
+	display:none;
+	position:absolute;
+	top:2px;
+	right:2px;
+}
+
+.song_delpic_show:hover{
+	border-color:#f63;
+}
+
+.song_delpic_show:hover span{
+	display:block;
+	cursor:pointer;
+}
+
+.song_delsaddr_show{
+	width:300px;
+	height:30px;
+	overflow:hidden;
+	position:relative;
+	float:left;
+	border:1px solid #fff;
+}
+.song_delsaddr_show>span{
+	margin:0px;
+	padding:0px;
+	background:url(../../images/cancel.png) no-repeat; center center;
+	width:16px;
+	height:16px;
+	display:none;
+	position:absolute;
+	top:2px;
+	right:2px;
+}
+.song_delsaddr_show:hover{
+	border-color:#f63;
+}
+
+.song_delsaddr_show:hover span{
+	display:block;
+	cursor:pointer;
+}
+</style>
+
+<script type="text/javascript">
+var songObject;
+var singerList;
+var styleInfoList;
+$(function(){
+	var singerStr="";
+	var singerTypeStr="";
+	var languageStr="";
+	var styleStr="";
+	$.get("../../songServlet",{op:"findInfo"},function(data){
+		var str="";
+		$("#song_search_singerType").html("");
+		$("#song_update_singerType").html("");
+		$("#song_search_singerId").html("");
+		$("#song_update_singerId").html("");
+		$("#song_update_languages").html("");
+		$("#song_search_languages").html("");
+		$("#song_update_style").html("");
+		$("#song_search_style").html("");
+		
+		$("#song_search_singerType").html("");
+		$("#song_update_singerType").html("<option value=''>--全部--</option>");
+		$("#song_search_singerId").html("<option value=''>--全部--</option>");
+		$("#song_search_languages").html("<option value=''>--全部--</option>");
+		$("#song_search_style").html("<option value=''>--全部--</option>");
+		$.each(data.singerTypes,function(index,item){
+			singerTypeStr+="<option value='"+item.sid+"'>"+item.sname+"</option>";
+		});
+		$("#song_search_singerType").append($(singerTypeStr));
+		$("#song_update_singerType").append($(singerTypeStr));
+		singerList=data.singers;
+		$.each(singerList,function(index,item){
+			singerStr+="<option value='"+item.sid+"'>"+item.sname+"</option>";
+		});
+		$("#song_search_singerId").append($(singerStr));
+		$("#song_update_singerId").append($(singerStr));
+		
+		styleInfoList=data.styleInfos;
+		$.each(styleInfoList,function(index,item){
+			if(item.flag==1){
+				languageStr+="<option value='"+item.sid+"'>"+item.sname+"</option>";
+			}else if(item.flag==2){
+				styleStr+="<option value='"+item.sid+"'>"+item.sname+"</option>";
+			}
+		});
+		$("#song_update_languages").append($(languageStr));
+		$("#song_search_languages").append($(languageStr));
+		$("#song_update_style").append($(styleStr));
+		$("#song_search_style").append($(styleStr));
+		songObject=$('#song_data').datagrid({   
+		    url:'../../songServlet',   
+		    queryParams:{op:"find"},
+		    fitColumns:true,
+		    striped:true,
+		    loadMsg:'数据加载中...',
+		    rownumbers:true,
+		    pagination:true,
+		    pageNumber:1,
+		    singleSelect:true,
+		    pageSize:10,
+		    pageList:[5,10,20,30,40,50],
+		    sortName:'sid',
+		    remoteSort:false,
+		    columns:[[ 
+				{field:'sids',checkbox:true},
+				{field:'photo',title:'歌曲图片',width:100,align:'center',formatter:function(val,row,index){
+					if(val==""||val==null||val=="null"){
+						return "<img src='../../images/yclogo.png' width='50px' height='50px'/>"
+					}else{
+						return "<img src='../../"+val+"'  width='50px' height='50px' />";
+					}
+					
+				}},
+		        {field:'sid',title:'歌曲编号',width:50,align:'center',hidden:true,sortable:true},   
+		        {field:'sname',title:'歌曲名称',width:100,align:'center'},   
+		        {field:'saddr',title:'歌曲',width:100,align:'center',formatter:function(val,row,index){
+					if(val==""||val==null||val=="null"){
+						return null;
+					}else{
+						return "<audio controls> <source src='../../"+val+"' type='audio/mpeg'> </audio>"
+
+					}
+					
+				}},
+				{field:'longs',title:'歌曲时长',width:50,align:'center'},   
+		        {field:'singerId',title:'歌手',width:100,align:'center',formatter:function(val,row,index){
+		        	for(var i=0;i<singerList.length;i++){
+		        		if(val==singerList[i].sid){
+		        			return singerList[i].sname;
+		        		}
+		        	}
+		        }},
+		        {field:'clickRate',title:'点击率',width:50,align:'center'},
+		        {field:'languages',title:'语种',width:100,align:'center',formatter:function(val,row,index){
+	
+		        	for(var i=0;i<styleInfoList.length;i++){
+		        		if(val==styleInfoList[i].sid){
+		        			
+		        			return styleInfoList[i].sname;
+		        		}
+		        	}
+		        }},
+		        {field:'style',title:'风格',width:100,align:'center',formatter:function(val,row,index){
+		        	for(var i=0;i<styleInfoList.length;i++){
+		        		if(val==styleInfoList[i].sid){
+		        			return styleInfoList[i].sname;
+		        		}
+		        	}
+		        	}},
+		        {field:'_operate',title:'操作',width:100,align:'center',formatter:function(val,row,index){
+		        	return "<a href='javascript:song_delsong("+row.sid+")'> 删除</a>"
+		        }}
+		    ]],
+		    toolbar:"#song_search"
+
+		});  
+		
+	},"json");
+	
+});
+
+
+function song_showAddsong(){
+	$("#song_update_song")[0].reset();
+	$("#song_update_showpic").html("");
+	$("#song_update_showsongaddr").html("");
+	$('#song_update').dialog({
+		title:"添加歌曲信息",
+		iconCls:'icon-user-add',
+		buttons:[{
+			text:'确定',
+			iconCls:'icon-user-add',
+			handler:function(){
+			
+				var singerId=$.trim( $("#song_update_singerId").val() );
+				var sname=$.trim( $("#song_update_sname").val() );
+				var longs=$.trim( $("#song_update_longs").val() );
+				var languages=$.trim( $("#song_update_languages").val() );
+				var style=$.trim( $("#song_update_style").val() );
+ 				var lyric=$.trim( $("#lyric").val() );
+				if(sname==""){
+					return;
+				}
+				//检测添加歌曲之前是否已经存在歌曲
+				$.post("../../songServlet",{op:"findSongByNameAndId",sname:sname,singerId:singerId},function(data){
+					data=parseInt($.trim(data));
+					if(data==1){
+						 alert("数据库中已经存在歌曲，请勿重复添加!!!!");
+						 return;
+					}else{
+						  $.ajaxFileUpload({
+							url:"../../songServlet?op=addSong",
+							secureuri:false,
+							fileElementId:['song_update_saddr','lyric','song_update_photo'],
+							dataType:"text",
+							data:{singerId:singerId,sname:sname,longs:longs,languages:languages,style:style},
+							success:function(data,status){
+								data=parseInt($.trim(data));
+								if(data>0){
+									songObject.datagrid("reload");
+									$("#song_update_song")[0].reset();
+									$("#song_update_showpic").html("");
+									$.messager.show({title:"成功提示",msg:"歌曲信息添加成功...",timeout:2000,showType:"slide"});
+									$('#song_update').dialog("close");
+								}else{
+									$.messager.alert("失败提示","歌曲信息添加失败(可能歌曲已经存在)...","error");
+								}
+								
+							},
+							error:function(data,status,e){
+								$.messager.alert("失败提示","歌曲信息添加失败...\n"+e,"error");
+							}
+						}); 
+					}
+				});
+				
+			}
+		}]
+	});
+	$('#song_update').dialog("open");
+}
+
+var song_picstr;
+var song_saddr;
+var song_lyric;
+function song_showUpdatesong(){
+
+	$("#song_update_showpic").html("");
+	$("#song_update_showsongaddr").html("");
+	var rows=$('#song_data').datagrid("getChecked");
+	if(rows.length<=0){
+		$.messager.show({title:"温馨提示",msg:"请选择您要修改的歌曲信息...",timeout:2000,showType:"slide"});
+	}else{
+		var row=rows[0];
+		$("#song_update_singerId").val(row.singerId);
+		$("#song_update_sname").val(row.sname);
+		$("#song_update_longs").val(row.longs);
+		$("#song_update_languages").val(row.languages);
+		$("#song_update_style").val(row.style);
+		song_picstr=row.photo;
+		song_saddr=row.saddr;
+		song_lyric=row.lyric;
+		if(row.photo!=null&&row.photo!="" && row.photo!="null" ){
+			var str="<div class='song_delpic_show'><img src='../../"+row.photo+"' />";
+			str+="<span onclick='song_delPic()'></span></div>";
+			$("#song_update_showpic").append($(str));
+		}
+		if(row.saddr!=null&&row.saddr!=""&&row.saddr!="null"){
+			var str="<div class='song_delsaddr_show'>"+row.saddr+"<span onclick='song_delSaddr()'></span></div>";
+			$("#song_update_showsongaddr").append($(str));
+		}
+
+	$('#song_update').dialog({
+		title:"修改歌曲信息",
+		iconCls:'icon-user-edit',
+		buttons:[{
+			text:'修改',
+			iconCls:'icon-user-edit',
+			handler:function(){
+				var singerId=$.trim( $("#song_update_singerId").val() );
+				var sname=$.trim( $("#song_update_sname").val() );
+				var longs=$.trim( $("#song_update_longs").val() );
+				var languages=$.trim( $("#song_update_languages").val() );
+				var style=$.trim( $("#song_update_style").val() );
+				 
+				if(sname==""){
+					return;
+				}
+				$.ajaxFileUpload({
+					url:"../../songServlet?op=updateSong",
+					secureuri:false,
+					fileElementId:['song_update_saddr','lyric','song_update_photo'],
+					dataType:"text",
+					data:{singerId:singerId,sname:sname,longs:longs,languages:languages,style:style,sid:row.sid,languagess:song_picstr,styles:song_saddr,lyric:song_lyric},
+					success:function(data,status){
+						data=parseInt($.trim(data));
+						if(data>0){
+							$("#song_update_song")[0].reset();
+							$("#song_update_showpic").html("");
+							$.messager.show({title:"成功提示",msg:"歌曲信息修改成功...",timeout:2000,showType:"slide"});
+							$('#song_update').dialog("close");
+							songObject.datagrid("reload");
+						}else{
+							$.messager.alert("失败提示","歌曲信息修改失败...","error");
+						}
+						
+					},
+					error:function(data,status,e){
+						$.messager.alert("失败提示","歌曲信息添加失败...\n"+e,"error");
+					}
+				});
+			
+			}
+		}]
+	})
+	$('#song_update').dialog("open");
+	}
+}
+
+function song_delSaddr(){
+	$("#song_update_showsongaddr").html("");
+	song_saddr="";
+}
+
+function song_delPic(){
+	$("#song_update_showpic").html("");
+	song_picstr="";
+}
+
+
+function song_delsong(sid){
+	$.post("../../songServlet",{op:"delSong",sid:sid},function(data){
+		data=parseInt($.trim(data));
+		if(data>0){
+			$.messager.show({title:"成功提示",msg:"歌曲信息删除成功...",timeout:2000,showType:"slide"});
+			songObject.datagrid("reload");
+		}else{
+			$.messager.alert("失败提示","歌曲信息删除失败...","error");
+			songObject.datagrid("reload");
+		}
+	})
+}
+
+function song_searchsong(){
+	var singerId=$.trim( $("#song_search_singerId").val() );
+	var languages=$.trim( $("#song_search_languages").val() );
+	var style=$.trim( $("#song_search_style").val() );
+	var sname=$.trim( $("#song_search_sname").val() );
+	
+	$('#song_data').datagrid({
+		url:"../../songServlet",
+		queryParams:{op:"search",singerId:singerId,languages:languages,style:style,sname:sname}
+	});
+	
+}
+
+function changeSinger(val,id){
+	var str="<option value=''>--全部--</option>";
+	$.each(singerList,function(index,item){
+		if(val==""){
+			str+="<option value='"+item.sid+"'>"+item.sname+"</option>";
+		}else{
+			if(val==item.stid){
+				str+="<option value='"+item.sid+"'>"+item.sname+"</option>";
+			}
+		}
+	});
+	$("#"+id).html("").append($(str));
+	
+}
+
+</script>

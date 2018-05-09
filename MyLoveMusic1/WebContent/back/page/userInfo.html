@@ -1,0 +1,118 @@
+<table id="userInfo_data" data-options="fit:true">
+</table>
+
+<script type="text/javascript">
+var userInfoEditRow=undefined;
+var userInfoOp;
+var userInfoFlag;
+
+var userInfoObject=$('#userInfo_data').datagrid({   
+    url:'../../userInfoServlet',   
+    queryParams:{op:"find"},
+    fitColumns:true,
+    striped:true,
+    loadMsg:'数据加载中...',
+    rownumbers:true,
+   // singleSelect:true,
+    pagination:true,
+    pageNumber:1,
+    pageSize:5,
+    pageList:[5,10,20,30,40,50],
+    sortName:'usid',
+    remoteSort:false,
+    columns:[[ 
+		{field:'usids',checkbox:true},
+        {field:'usid',title:'会员编号',width:100,align:'center',sortable:true},   
+        {field:'tel',title:'会员电话',width:100,align:'center',editor:{type:"text",options:{required:true}}}, 
+        {field:'pwd',title:'会员密码',width:100,align:'center',editor:{type:"text",options:{required:true}}},
+        {field:'uname',title:'会员昵称',width:100,align:'center',editor:{type:"text",options:{required:true}}},
+        {field:'sex',title:'会员性别',width:100,align:'center',editor:{type:"text",options:{required:true}}},
+        {field:'integral',title:'会员积分',width:100,align:'center'}
+    ]],
+    toolbar: [{
+    	text:"添加",
+		iconCls: 'icon-user-add',
+		handler: function(){
+			if(userInfoEditRow==undefined){
+				//在表格最前面添加一行
+				userInfoObject.datagrid('insertRow',{index:0,row:{}});
+				userInfoObject.datagrid("beginEdit",0);//开始编辑第一行
+				userInfoEditRow=0;//记录正在被编辑的行的索引
+				userInfoOp="addUser";
+				userInfoFlag="添加";
+			}
+			
+		}
+	},'-',{
+		text:"删除",
+		iconCls: 'icon-user-delete',
+		handler: function(){
+			var rows=userInfoObject.datagrid("getChecked");
+			if(rows.length<0){
+				$.messager.show({title:'温馨提示',msg:'请选择您要删除的数据...',timeout:2000,showType:'slide'});
+				
+			}else{
+				$.messager.confirm('确认提示','一旦删除数据不能恢复，确认删除吗',function(r){
+					if(r){
+						//获取所有要删除的部门id
+						var usids="";
+						for(var i=0;i<rows.length-1;i++){
+							usids+=rows[i].usid+",";
+						}
+						usids+=rows[i].usid;
+						$.post("../../userInfoServlet",{op:"delUser",usid:usids},function(data){
+							data=parseInt($.trim(data));
+							if(data>0){
+								$.messager.show({title:'温馨提示',msg:'会员信息删除成功...',timeout:2000,showType:'slide'})
+								userInfoObject.datagrid("reload");							
+							}else{
+								$.messager.alert('失败提示','会员信息删除失败','error');
+								userInfoObject.datagrid("reload");	
+							}
+						},"text");
+					}else{
+						return;
+					}
+				});
+			}
+			
+		}
+	},'-',{
+		text:"保存",
+		iconCls: 'icon-user-tick',
+		handler: function(){
+			//先结束当前正在编辑的行
+			if(userInfoEditRow!=undefined){//说明有正在编辑的行
+				userInfoObject.datagrid("endEdit",userInfoEditRow);//结束编辑
+				userInfoEditRow=undefined;
+			}
+			
+			var row=userInfoObject.datagrid("getChanges")[0];
+			if(row==undefined){
+				$.messager.show({title:'温馨提示',msg:'请选择或编辑您要修改的数据...',timeout:2000,showType:'slide'});
+			}else{
+				row["op"]=userInfoOp;
+				$.post("../../userInfoServlet",row,function(data){
+					data=parseInt($.trim(data));
+					if(data>0){
+						$.messager.show({title:'温馨提示',msg:'会员信息'+userInfoFlag+'成功...',timeout:2000,showType:'slide'})
+						userInfoObject.datagrid("reload");	
+					}else{
+						$.messager.alert('失败提示','会员信息'+userInfoFlag+'失败','error');
+						userInfoObject.datagrid("reload");	
+					}
+				},"text");
+			}
+		}
+	},'-',{
+		text:"撤销",
+		iconCls: 'icon-undo',
+		handler: function(){
+			userInfoObject.datagrid("endEdit",userInfoEditRow);//结束编辑
+			userInfoEditRow=undefined;
+		}
+	}]
+
+});  
+
+</script>

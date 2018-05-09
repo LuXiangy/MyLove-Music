@@ -1,0 +1,297 @@
+<table id="singer_data" data-options="fit:true">
+</table>
+
+<div id="singer_search">
+	<a id="btn" href="javascript:singer_showAddSinger()" class="easyui-linkbutton" data-options="iconCls:'icon-user-add',plain:true" style="float:left">添加</a>  
+	<div class="datagrid-btn-separator"></div>
+	<a id="btn" href="javascript:singer_showUpdateSinger()" class="easyui-linkbutton" data-options="iconCls:'icon-user-edit',plain:true" style="float:left">修改</a>  
+	<div class="datagrid-btn-separator"></div>
+	<label>歌手类型：</label>
+	<select name="stid" id="singer_search_stid">
+		<option value="">--全部--</option>
+	</select>
+	<label>歌手姓名：</label>
+	<input type="text" name="sname" id="singer_search_sname"/>
+	<a href="javascript:singer_searchSinger()" class="easyui-linkbutton" data-options="iconCls:'icon-user-magnify'">查询</a>
+</div>
+
+<div id="singer_update" class="easyui-dialog" title="添加歌手信息" style="width:500px;height:300px;align:center"
+		data-options="iconCls:'icon-user-add',resizable:true,modal:true,closed:true" >
+	<form id="singer_update_singer">
+		<ul>
+			<li>
+				<label>歌手类型：</label>
+				<select name="stid" id="singer_update_stid"></select>
+			</li>
+			<li>
+				<label>歌手姓名：</label>
+				<input type="text" name="sname" id="singer_update_sname" class="singer_input"/>
+			</li>
+			<li>
+				<label>歌手图片：</label>
+				<input type="file" name="photo" id="singer_update_photo" onchange="setImagePreviews(this,'singer_update_showpic')"/>
+			</li>
+			<li>
+				<div id="singer_update_showpic"></div>
+			</li>
+		</ul>
+	</form>
+</div>
+
+<style>
+#singer_search label{
+	margin-left:20px;
+}
+
+#singer_update li{
+	list-style-type:none;
+	margin-top:20px;
+}
+
+#singer_update .singer_input{
+	width:160px;
+	border:1px solid #95B8E7;
+	line-height:20px;
+}
+
+.singer_delpic_show{
+	width:100px;
+	height:100px;
+	overflow:hidden;
+	position:relative;
+	float:left;
+	border:1px solid #fff;
+}
+
+.singer_delpic_show>span{
+	margin:0px;
+	padding:0px;
+	background:url(../../images/cancel.png) no-repeat; center center;
+	width:16px;
+	height:16px;
+	display:none;
+	position:absolute;
+	top:2px;
+	right:2px;
+}
+
+.singer_delpic_show:hover{
+	border-color:#f63;
+}
+
+.singer_delpic_show:hover span{
+	display:block;
+	cursor:pointer;
+}
+
+</style>
+
+<script type="text/javascript">
+var singerObject;
+$(function(){
+	$.get("../../singerTypeServlet",{op:"findAll"},function(data){
+		var str="";
+		$.each(data,function(index,item){
+			str+="<option value='"+item.sid+"'>"+item.sname+"</option>";
+		});
+		$("#singer_search_stid").append($(str));
+		$("#singer_update_stid").append($(str));
+		
+		singerObject=$('#singer_data').datagrid({   
+		    url:'../../singerServlet',   
+		    queryParams:{op:"find"},
+		    fitColumns:true,
+		    striped:true,
+		    loadMsg:'数据加载中...',
+		    rownumbers:true,
+		    pagination:true,
+		    pageNumber:1,
+		    singleSelect:true,
+		    pageSize:5,
+		    pageList:[5,10,20,30,40,50],
+		    sortName:'sid',
+		    remoteSort:false,
+		    columns:[[ 
+				{field:'sids',checkbox:true},
+				{field:'photo',title:'歌手图片',width:100,align:'center',formatter:function(val,row,index){
+					if(val==""||val==null||val=="null"){
+						return "<img src='../../images/yclogo.png' width='50px' height='50px'/>"
+					}else{
+						return "<img src='../../"+val+"'  width='50px' height='50px' />";
+					}
+					
+				}},
+		        {field:'sid',title:'歌手编号',width:100,align:'center',hidden:true,sortable:true},   
+		        {field:'sname',title:'歌手名称',width:100,align:'center'},   
+		        {field:'stid',title:'歌手类型',width:100,align:'center',formatter:function(val,row,index){
+		        	for(var i=0;i<data.length;i++){
+		        		if(val==data[i].sid){
+		        			return data[i].sname;
+		        		}
+		        	}
+		        }},
+		        {field:'clickRate',title:'点击率',width:100,align:'center'},
+		        {field:'_operate',title:'操作',width:100,align:'center',formatter:function(val,row,index){
+		        	return "<a href='javascript:singer_delSinger("+row.sid+")'> 删除</a>"
+		        }}
+		    ]],
+		    toolbar:"#singer_search"
+
+		});  
+		
+	},"json");
+	
+});
+
+
+function singer_showAddSinger(){
+	$("#singer_update_singer")[0].reset();
+	$("#singer_update_showpic").html("");
+	$('#singer_update').dialog({
+		title:"添加歌手信息",
+		iconCls:'icon-user-add',
+		buttons:[{
+			text:'确定',
+			iconCls:'icon-user-add',
+			handler:function(){
+			
+				var stid=$.trim( $("#singer_update_stid").val() );
+				var sname=$.trim( $("#singer_update_sname").val() );
+			
+				if(sname==""){
+					return;
+				}
+				  $.ajax({
+					url:"../../singerServlet",
+					data:{op:"search",sname:$.trim(sname),stid:stid,page:1,rows:400},
+					type:"POST",
+					dataType:"JSON",
+					success:function(data){
+						if(data.rows!=null&&data.rows!=""){
+							 alert("数据库中已经存在歌手，请勿重复添加!!!!");
+							 return;
+						}else{
+							$.ajaxFileUpload({
+								url:"../../singerServlet?op=addSinger",
+								secureuri:false,
+								fileElementId:"singer_update_photo",
+								dataType:"text",
+								data:{stid:stid,sname:sname},
+								success:function(data,status){
+									data=parseInt($.trim(data));
+									if(data>0){
+										singerObject.datagrid("reload");
+										$("#singer_update_singer")[0].reset();
+										$("#singer_update_showpic").html("");
+										$.messager.show({title:"成功提示",msg:"歌手信息添加成功...",timeout:2000,showType:"slide"});
+										$('#singer_update').dialog("close");
+									}else{
+										$.messager.alert("失败提示","歌手信息添加失败...","error");
+									}
+								},
+								error:function(data,status,e){
+									$.messager.alert("失败提示","歌手信息添加失败...\n"+e,"error");
+								}
+							});
+						 }
+					} 
+			});
+			}
+		}]
+	});
+	$('#singer_update').dialog("open");
+}
+
+var singer_picstr;
+function singer_showUpdateSinger(){
+	$("#singer_update_singer")[0].reset();
+	$("#singer_update_showpic").html("");
+	var rows=$('#singer_data').datagrid("getChecked");
+	if(rows.length<=0){
+		$.messager.show({title:"温馨提示",msg:"请选择您要修改的歌手信息...",timeout:2000,showType:"slide"});
+	}else{
+		var row=rows[0];
+		$("#singer_update_stid").val(row.stid);
+		$("#singer_update_sname").val(row.sname);
+		singer_picstr=row.photo;
+		if(row.photo!=null&&row.photo!="" && row.photo!="null" ){
+			var str="<div class='singer_delpic_show'><img src='../../"+row.photo+"' />";
+			str+="<span onclick='singer_delPic()'></span></div>";
+			$("#singer_update_showpic").append($(str));
+		}
+
+	$('#singer_update').dialog({
+		title:"修改歌手信息",
+		iconCls:'icon-user-edit',
+		buttons:[{
+			text:'修改',
+			iconCls:'icon-user-edit',
+			handler:function(){
+				var stid=$.trim( $("#singer_update_stid").val() );
+				var sname=$.trim( $("#singer_update_sname").val() );
+			
+				if(sname==""){
+					return;
+				}
+				$.ajaxFileUpload({
+					url:"../../singerServlet?op=updateSinger",
+					secureuri:false,
+					fileElementId:"singer_update_photo",
+					dataType:"text",
+					data:{stid:stid,sname:sname,sid:row.sid,stname:singer_picstr},
+					success:function(data,status){
+						data=parseInt($.trim(data));
+						if(data>0){
+							
+							$("#singer_update_singer")[0].reset();
+							$("#singer_update_showpic").html("");
+							$.messager.show({title:"成功提示",msg:"歌手信息修改成功...",timeout:2000,showType:"slide"});
+							$('#singer_update').dialog("close");
+							singerObject.datagrid("reload");
+						}else{
+							$.messager.alert("失败提示","歌手信息修改失败...","error");
+						}
+						
+					},
+					error:function(data,status,e){
+						$.messager.alert("失败提示","歌手信息添加失败...\n"+e,"error");
+					}
+				});
+			
+			}
+		}]
+	})
+	$('#singer_update').dialog("open");
+	}
+}
+
+function singer_delPic(){
+	$("#singer_update_showpic").html("");
+	singer_picstr="";
+}
+
+
+function singer_delSinger(sid){
+	$.post("../../singerServlet",{op:"delSinger",sid:sid},function(data){
+		data=parseInt($.trim(data));
+		if(data>0){
+			$.messager.show({title:"成功提示",msg:"歌手信息删除成功...",timeout:2000,showType:"slide"});
+			singerObject.datagrid("reload");
+		}else{
+			$.messager.alert("失败提示","歌手信息删除失败...","error");
+			singerObject.datagrid("reload");
+		}
+	})
+}
+
+function singer_searchSinger(){
+	var stid=$.trim( $("#singer_search_stid").val() );
+	var sname=$.trim( $("#singer_search_sname").val() );
+	
+	$('#singer_data').datagrid({
+		url:"../../singerServlet",
+		queryParams:{op:"search",stid:stid,sname:sname}
+	});
+	
+}
+</script>

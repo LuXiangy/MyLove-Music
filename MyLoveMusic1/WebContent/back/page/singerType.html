@@ -1,0 +1,131 @@
+<table id="singerType_data" data-options="fit:true"></table>
+<script type="text/javascript">
+var singerTypeEditRow=undefined;
+var SingerTypeOp;
+var SingerTypeFlag;
+
+var SingerTypeObject=$('#singerType_data').datagrid({   
+    url:'../../singerTypeServlet',   
+    queryParams:{op:"find"},
+    fitColumns:true,
+    striped:true,
+    loadMsg:'数据加载中...',
+    rownumbers:true,
+   // singleSelect:true,
+    pagination:true,
+    pageNumber:1,
+    pageSize:5,
+    pageList:[5,10,20,30,40,50],
+    sortName:'sid',
+    remoteSort:false,
+    columns:[[ 
+		{field:'sids',checkbox:true},
+        {field:'sid',title:'歌手类型编号',width:100,align:'center',hidden:true,sortable:true},   
+        {field:'sname',title:'歌手类型名称',width:100,align:'center',editor:{type:"text",options:{required:true}}},   
+    ]],
+    toolbar: [{
+    	text:"添加",
+		iconCls: 'icon-award-star-add',
+		handler: function(){
+			if(singerTypeEditRow==undefined){
+				//在表格最前面添加一行
+				SingerTypeObject.datagrid('insertRow',{index:0,row:{}});
+				SingerTypeObject.datagrid("beginEdit",0);//开始编辑第一行
+				singerTypeEditRow=0;//记录正在被编辑的行的索引
+				SingerTypeOp="addSingerType";
+				SingerTypeFlag="添加";
+			}
+			
+		}
+	},'-',{
+		text:"修改",
+		iconCls: 'icon-award-star-silver-2',
+		handler: function(){
+			if(singerTypeEditRow!=undefined){
+				SingerTypeObject.datagrid("endEdit",singerTypeEditRow);//
+				singerTypeEditRow=undefined;
+			}
+			var row=SingerTypeObject.datagrid("getChecked")[0];
+			if(row==undefined){
+				$.messager.show({title:'温馨提示',msg:'请选则您要修改的数据...',timeout:2000,showType:'slide'});
+			}else{
+				//获取选中的行的索引
+				singerTypeEditRow=SingerTypeObject.datagrid("getRowIndex",row);
+				SingerTypeObject.datagrid('beginEdit',singerTypeEditRow);
+				SingerTypeOp="updateSingerType";
+				SingerTypeFlag="修改";
+			}
+		}
+	},'-',{
+		text:"删除",
+		iconCls: 'icon-award-star-delete',
+		handler: function(){
+			var rows=SingerTypeObject.datagrid("getChecked");
+			if(rows.length<0){
+				$.messager.show({title:'温馨提示',msg:'请选择您要删除的数据...',timeout:2000,showType:'slide'});
+				
+			}else{
+				$.messager.confirm('确认提示','一旦删除数据不能恢复，确认删除吗',function(r){
+					if(r){
+						//获取所有要删除的部门id
+						var sids="";
+						for(var i=0;i<rows.length-1;i++){
+							sids+=rows[i].sid+",";
+						}
+						sids+=rows[i].sid;
+						$.post("../../singerTypeServlet",{op:"delSingerType",sid:sids},function(data){
+							data=parseInt($.trim(data));
+							if(data>0){
+								$.messager.show({title:'温馨提示',msg:'歌手类型信息删除成功...',timeout:2000,showType:'slide'})
+								SingerTypeObject.datagrid("reload");							
+							}else{
+								$.messager.alert('失败提示','歌手类型信息删除失败','error');
+								SingerTypeObject.datagrid("reload");
+							}
+						},"text");
+					}else{
+						return;
+					}
+				});
+			}
+			
+		}
+	},'-',{
+		text:"保存",
+		iconCls: 'icon-save',
+		handler: function(){
+			//先结束当前正在编辑的行
+			if(singerTypeEditRow!=undefined){//说明有正在编辑的行
+				SingerTypeObject.datagrid("endEdit",singerTypeEditRow);//结束编辑
+				singerTypeEditRow=undefined;
+			}
+			
+			var row=SingerTypeObject.datagrid("getChanges")[0];
+			if(row==undefined){
+				$.messager.show({title:'温馨提示',msg:'请选择或编辑您要修改的数据...',timeout:2000,showType:'slide'});
+			}else{
+				row["op"]=SingerTypeOp;
+				$.post("../../singerTypeServlet",row,function(data){
+					data=parseInt($.trim(data));
+					if(data>0){
+						$.messager.show({title:'温馨提示',msg:'歌手类型信息'+SingerTypeFlag+'成功...',timeout:2000,showType:'slide'})
+						SingerTypeObject.datagrid("reload");	
+					}else{
+						$.messager.alert('失败提示','歌手类型信息'+SingerTypeFlag+'失败','error');
+						SingerTypeObject.datagrid("reload");
+					}
+				},"text");
+			}
+		}
+	},'-',{
+		text:"撤销",
+		iconCls: 'icon-undo',
+		handler: function(){
+			SingerTypeObject.datagrid("endEdit",singerTypeEditRow);//结束编辑
+			singerTypeEditRow=undefined;
+		}
+	}]
+
+});  
+
+</script>
